@@ -9,4 +9,8 @@
 #define BUTTON_TWO
 #define BUTTON_THREE
 #define BUTTON_FOUR
-#define BUTTON_RESET
+#define BUTTON_RESET 5
+
+// typedef struct{
+//     device_identification
+// }
