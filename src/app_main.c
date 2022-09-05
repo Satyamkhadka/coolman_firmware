@@ -7,7 +7,7 @@
 
 #include "test_input_generator.h"
 #include "provisioning.h"
-
+#include "button_setup.h"
 #include "https.h"
 void app_main(void)
 {
@@ -24,15 +24,15 @@ void app_main(void)
     }
 
     /* Initialize TCP/IP */
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // ESP_ERROR_CHECK(esp_netif_init());
+    // ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // provision the device here. provide with the wifi
-    provisioning();
-
+    // provisioning();
+    button_setup();
     // this is the button press action
-    xTaskCreate(btn_press_task, "test_button_presses", 4096, NULL, 1, NULL);
+    // xTaskCreate(btn_press_task, "test_button_presses", 4096, NULL, 1, NULL);
 
     // this sends button presses stored in the queue to the server
-    xTaskCreate(https_send_task, "https_send_task", 8192 * 2, NULL, 1, NULL);
+    // xTaskCreate(https_send_task, "https_send_task", 8192 * 2, NULL, 1, NULL);
 }

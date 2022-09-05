@@ -12,13 +12,13 @@ void btn_press_task()
     while (1)
     {
 
-        button_cb(5);
+        button_one_cb(5);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
-        button_cb(6);
+        button_one_cb(6);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
-        button_cb(7);
+        button_one_cb(7);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
-        button_cb(8);
+        button_one_cb(8);
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }

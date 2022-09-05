@@ -9,12 +9,14 @@
 #include "button_cb.h"
 #include "https.h"
 #include "freertos/queue.h"
+#include "driver/gpio.h"
+#include "settings.h"
 const static char *TAG = "button_cb";
 
 time_t now;
 time_t prev;
 char out[12];
-esp_err_t button_cb(gpio_num_t pin)
+void button_one_cb(gpio_num_t pin)
 {
     ESP_LOGI(TAG, "button pressed number:%d", pin);
     time(&now);
@@ -36,4 +38,22 @@ esp_err_t button_cb(gpio_num_t pin)
     {
         return ESP_FAIL;
     }
+}
+void button_one_cb_test(gpio_num_t pin)
+{
+    ESP_LOGI(TAG, "button pressed number:%d", pin);
+    time(&now);
+    ESP_LOGI(TAG, "current timestamp is: %d", (int)now);
+    gpio_set_level(BUTTON_BUZZER, 1);
+    vTaskDelay(250 / portTICK_PERIOD_MS);
+    gpio_set_level(BUTTON_BUZZER, 0);
+}
+void button_two_cb_test(gpio_num_t pin)
+{
+    ESP_LOGI(TAG, "button pressed number:%d", pin);
+    time(&now);
+    ESP_LOGI(TAG, "current timestamp is: %d", (int)now);
+    gpio_set_level(BUTTON_BUZZER, 1);
+    vTaskDelay(250 / portTICK_PERIOD_MS);
+    gpio_set_level(BUTTON_BUZZER, 0);
 }
