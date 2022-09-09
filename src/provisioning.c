@@ -20,14 +20,10 @@
 #include <nvs_flash.h>
 
 #include <wifi_provisioning/manager.h>
+#include "device_setup.h"
 
-#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
-#include <wifi_provisioning/scheme_ble.h>
-#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
-
-#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
 #include <wifi_provisioning/scheme_softap.h>
-#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
+#include "esp_sntp.h"
 
 static const char *TAG = "app";
 
@@ -177,7 +173,7 @@ static void wifi_prov_print_qr(const char *name, const char *pop, const char *tr
 
 void provisioning(void)
 {
-
+    sntp_servermode_dhcp(1);
     /* Initialize the event loop */
     wifi_event_group = xEventGroupCreate();
 
@@ -346,4 +342,9 @@ void provisioning(void)
 
     /* Wait for Wi-Fi connection */
     xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
+    ESP_LOGI(TAG, "Waiting for time to ser");
+
+    // vTaskDelay(5000 / portTICK_PERIOD_MS);
+    obtain_time();
+    // vTaskDelay(5000 / portTICK_PERIOD_MS);
 }

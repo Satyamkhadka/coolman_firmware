@@ -1,97 +1,115 @@
-## LED indicator
+LED Indicator
+==============
+:link_to_translation:`zh_CN:[中文]`
 
-LED indicator is one of the simplest output 外成, it can indicate the current working state of the system through flashing in different forms. The LED indicator component provided by ESP-IoT-Solution has the following functions:
+As one of the simplest output peripherals, LED indicators can indicate the current operating state of the system by blinking in different types. ESP-IoT-Solution provides an LED indicator component with the following features:
 
-* Support definition 多组内容引语
-* Support definition scintillation type priority
-* Support for creating multiple indicators
 
-### Usage method
+- Can define multiple groups of different blink types
+- Can define the priority of blink types
+- Can set up multiple indicators
 
-###
 
-Blinking step structure blink_step_t defines the type of the step, indicator state, and status duration. Multiple steps are combined into one blinking type, and different blinking types can be used to identify different system states. The definition method of blinking type is as follows:
+Instructions
+^^^^^^^^^^^^^^^^^
 
-Example 1. Define one cycle flashing：亮 0.05 S，亮 0.1 S，beginning after continuous cycle。
+Pre-define Blink Types
+++++++++++++++++++++++++++++++++
 
-```
-const blink_step_t test_blink_loop[] = {
-    {LED_BLINK_HOLD, LED_STATE_ON, 50}, // step1: turn on LED 50 ms
-    {LED_BLINK_HOLD, LED_STATE_OFF, 100}, // step2: turn off LED 100 ms
-    {LED_BLINK_LOOP, 0, 0}, // step3: loop from step1
-};
-```
+The blink step structure :cpp:type:`blink_step_t` defines the type of a step, indicator state and the state duration. Multiple steps are combined into one blink type, and different blink types can be used to identify different system states. The blink type is defined as follows:
 
-Example 2. Definition of one cycle flashing：亮 0.05 S，亮 0.1 S，亮 0.15 S，亮 0.1 S，电影完毕灯熳线。
+Example 1. define a blink loop: turn on 0.05 s, turn off 0.1 s, and loop.
 
-```
-const blink_step_t test_blink_one_time[] = {
-    {LED_BLINK_HOLD, LED_STATE_ON, 50}, // step1: turn on LED 50 ms
-    {LED_BLINK_HOLD, LED_STATE_OFF, 100}, // step2: turn off LED 100 ms
-    {LED_BLINK_HOLD, LED_STATE_ON, 150}, // step3: turn on LED 150 ms
-    {LED_BLINK_HOLD, LED_STATE_OFF, 100}, // step4: turn off LED 100 ms
-    {LED_BLINK_STOP, 0, 0}, // step5: stop blink (off)
-};
-```
+.. code:: c
 
-After defining the blink type, you need to add `led_indicator_blink_type_t` to the corresponding member, then add it to the `led_indicator_blink_lists` list, the example is as follows:
+    const blink_step_t test_blink_loop[] = {
+        {LED_BLINK_HOLD, LED_STATE_ON, 50},               // step1: turn on LED 50 ms
+        {LED_BLINK_HOLD, LED_STATE_OFF, 100},             // step2: turn off LED 100 ms
+        {LED_BLINK_LOOP, 0, 0},                           // step3: loop from step1
+    };
 
-```
-typedef enum {
-    BLINK_TEST_BLINK_ONE_TIME, /**< test_blink_one_time */
-    BLINK_TEST_BLINK_LOOP, /**< test_blink_loop */
-    BLINK_MAX, /**< INVALIED type */
-} led_indicator_blink_type_t;
+Example 2. define a blink loop: turn on 0.05 s, turn off 0.1 s, turn on 0.15 s, turn off 0.1 s, and stop blink.
 
-blink_step_t const * led_indicator_blink_lists[] = {
-    [BLINK_TEST_BLINK_ONE_TIME] = test_blink_one_time,
-    [BLINK_TEST_BLINK_LOOP] = test_blink_loop,
-    [BLINK_MAX] = NULL,
-};
-```
+.. code:: c
 
-###
+    const blink_step_t test_blink_one_time[] = {
+        {LED_BLINK_HOLD, LED_STATE_ON, 50},               // step1: turn on LED 50 ms
+        {LED_BLINK_HOLD, LED_STATE_OFF, 100},             // step2: turn off LED 100 ms
+        {LED_BLINK_HOLD, LED_STATE_ON, 150},              // step3: turn on LED 150 ms
+        {LED_BLINK_HOLD, LED_STATE_OFF, 100},             // step4: turn off LED 100 ms
+        {LED_BLINK_STOP, 0, 0},                           // step5: stop blink (off)
+    };
 
-For the same indicator, high-priority blinking can be interrupted by low-priority blinking, when the high-priority blinking ends, low-priority blinking resumes.的 priority level, the value of the smaller members will execute the higher priority level.
+After defining a blink type, you need to add its corresponding enumeration member to ``led_indicator_blink_type_t`` and then add the type to the blink type list ``led_indicator_blink_lists``, as the following example:
 
-For example, in the following example, the blinking test_blink_one_time is higher than test_blink_loop, it can be blinked first.
+.. code:: c
 
-```
-typedef enum {
-    BLINK_TEST_BLINK_ONE_TIME, /**< test_blink_one_time */
-    BLINK_TEST_BLINK_LOOP, /**< test_blink_loop */
-    BLINK_MAX, /**< INVALIED type */
-} led_indicator_blink_type_t;
-```
+    typedef enum {
+        BLINK_TEST_BLINK_ONE_TIME, /**< test_blink_one_time */
+        BLINK_TEST_BLINK_LOOP,     /**< test_blink_loop */
+        BLINK_MAX,                 /**< INVALIED type */ 
+    } led_indicator_blink_type_t;
 
-#### Control indicator flashes
+    blink_step_t const * led_indicator_blink_lists[] = {
+        [BLINK_TEST_BLINK_ONE_TIME] = test_blink_one_time,
+        [BLINK_TEST_BLINK_LOOP] = test_blink_loop,
+        [BLINK_MAX] = NULL,
+    };
 
-Create an indicator: specify a single IO and set a group of configuration information to create an indicator
+Pre-define Blink Priorities
+++++++++++++++++++++++++++++++++++++
 
-```
-led_indicator_config_t config = {
-    .off_level = 0, // attach led positive side to esp32 gpio pin
-    .mode = LED_GPIO_MODE,
-};
-led_indicator_handle_t led_handle = led_indicator_create(8, &config); // attach to gpio 8
-```
+For the same indicator, a high-priority blink can interrupt an ongoing low-priority blink, which will resume execution after the high-priority blink stop. The blink priority can be adjusted by configuring the enumeration member order of the blink type ``led_indicator_blink_type_t``, the smaller order value the higher execution priority.
 
-Start/stop flashing：Control the indicator light to open/stop the specified flashing type, return immediately after the function is called, internally by the timer control flashing process. The same indicator can turn on multiple types of flashing, according to the priority of the flashing.
+For instance, in the following example, ``test_blink_one_time`` has higher priority than ``test_blink_loop``, and should blink first:
 
-```
-led_indicator_start(led_handle, BLINK_TEST_BLINK_LOOP); // call to start, the function does not block
+.. code:: c
 
-/*
-*......
-*/
+    typedef enum {
+        BLINK_TEST_BLINK_ONE_TIME, /**< test_blink_one_time */
+        BLINK_TEST_BLINK_LOOP,     /**< test_blink_loop */
+        BLINK_MAX,                 /**< INVALIED type */ 
+    } led_indicator_blink_type_t;
 
-led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
-```
+Control Indicator Blinks
+++++++++++++++++++++++++++++++
 
-Delete the indicator: You can also delete the indicator when you don't need further operation
+Create an indicator by specifying an IO and a set of configuration information.
 
-```
-led_indicator_delete(&led_handle);
-```
+.. code:: c
 
-> The component supports thread safety operation, you can use global variable sharing LED indicator operation 句柄 led_indicator_handle_t, you can also use led_indicator_get_handle on other thread through LED's IO 号 get 句柄以通过数意.
+    led_indicator_config_t config = {
+        .off_level = 0,                              // attach led positive side to esp32 gpio pin
+        .mode = LED_GPIO_MODE,
+    };
+    led_indicator_handle_t led_handle = led_indicator_create(8, &config); // attach to gpio 8
+
+
+Start/stop blinking: control your indicator to start/stop a specified type of blink by calling corresponding functions. The functions are returned immediately after calling, and the blink process is controlled by the internal timer. The same indicator can perform multiple blink types in turn based on their priorities.
+
+.. code:: c
+
+    led_indicator_start(led_handle, BLINK_TEST_BLINK_LOOP); // call to start, the function not block
+
+    /*
+    *......
+    */
+
+    led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
+
+
+Delete an indicator: you can also delete an indicator to release resources if there are no further operations required.
+
+.. code:: c
+
+    led_indicator_delete(&led_handle);
+
+.. Note::
+
+    This component supports thread-safe operations. You can share the LED indicator handle ``led_indicator_handle_t`` with global variables, or use :cpp:type:`led_indicator_get_handle` to get the handle in other threads via the LED's IO number for operation.
+
+
+API Reference
+^^^^^^^^^^^^^^^^
+
+.. include:: /_build/inc/led_indicator.inc

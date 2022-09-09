@@ -20,7 +20,6 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-
 #include "esp_netif.h"
 
 #include "lwip/err.h"
@@ -40,135 +39,243 @@
 
 #include "https.h"
 #include "button_cb.h"
+
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "192.168.114.158"
 #define WEB_PORT "8000"
-#define WEB_PATH "/api/data/"
-
-// #define WEB_SERVER "example.com"
-// #define WEB_PORT "80"
-// #define WEB_PATH "/"
-
+#define WEB_URL "/api/data/"
 static const char *TAG = "example";
 
-static const char *REQUEST = "GET " WEB_PATH " HTTP/1.0\r\n"
-                             "Host: " WEB_SERVER ":" WEB_PORT "\r\n"
-                             "User-Agent: esp-idf/1.0 esp32\r\n"
+static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
+                             "Host: " WEB_SERVER "\r\n"
                              "Cache-Control: no-cache\r\n"
                              "Content-Type: application/x-www-form-urlencoded\r\n"
+                             "Content-Length: %d\r\n"
                              "\r\n"
                              "%s";
-// static const char *REQUEST = "POST " WEB_PATH " HTTP/1.0\r\n"
-//                              "Host: " WEB_SERVER ":" WEB_PORT "\r\n"
-//                              "User-Agent: esp-idf/1.0 esp32\r\n"
-//                              "Cache-Control: no-cache\r\n"
-//                              "Content-Type: application/x-www-form-urlencoded\r\n"
-//                              "\r\n"
-//                              "id=D-A-00-11-22-33-44&66=8&76=5&81=6";
-// static const char *REQUEST = "GET " WEB_PATH " HTTP/1.0\r\n"
-//                              "Host: " WEB_SERVER ":" WEB_PORT "\r\n"
-//                              "User-Agent: esp-idf/1.0 esp32\r\n"
-//                              "\r\n";
+
 void https_post_task(const char *pvParameters)
-
 {
+    char buf[256];
+    char req_buf[256];
+    snprintf(req_buf, 255, REQUEST, strlen(pvParameters), (char *)pvParameters);
+    int ret, flags, len;
+    ESP_LOGW(TAG, "%s", req_buf);
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_context ssl;
+    mbedtls_x509_crt cacert;
+    mbedtls_ssl_config conf;
+    mbedtls_net_context server_fd;
 
-    char buf[512];
-    // strcpy(buf, REQUEST);
-    snprintf(buf, 511, REQUEST, (char *)pvParameters);
-    ESP_LOGW(TAG, "%s", buf);
-    const struct addrinfo hints = {
-        .ai_family = AF_INET,
-        .ai_socktype = SOCK_STREAM,
-    };
-    struct addrinfo *res;
-    struct in_addr *addr;
-    int s, r;
-    char recv_buf[64];
+    mbedtls_ssl_init(&ssl);
+    mbedtls_x509_crt_init(&cacert);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    ESP_LOGI(TAG, "Seeding the random number generator");
+
+    mbedtls_ssl_config_init(&conf);
+
+    mbedtls_entropy_init(&entropy);
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                     NULL, 0)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+        abort();
+    }
+
+    ESP_LOGI(TAG, "Attaching the certificate bundle...");
+
+    ret = esp_crt_bundle_attach(&conf);
+
+    if (ret < 0)
+    {
+        ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
+        abort();
+    }
+
+    ESP_LOGI(TAG, "Setting hostname for TLS session...");
+
+    /* Hostname set here should match CN in server certificate */
+    if ((ret = mbedtls_ssl_set_hostname(&ssl, WEB_SERVER)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+        abort();
+    }
+
+    ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
+
+    if ((ret = mbedtls_ssl_config_defaults(&conf,
+                                           MBEDTLS_SSL_IS_CLIENT,
+                                           MBEDTLS_SSL_TRANSPORT_STREAM,
+                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
+        goto exit;
+    }
+
+    /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print
+       a warning if CA verification fails but it will continue to connect.
+
+       You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.
+    */
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+#ifdef CONFIG_MBEDTLS_DEBUG
+    mbedtls_esp_enable_debug_log(&conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
+
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+    mbedtls_ssl_conf_max_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+#endif
+
+    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        goto exit;
+    }
 
     while (1)
     {
-        int err = getaddrinfo(WEB_SERVER, WEB_PORT, &hints, &res);
+        mbedtls_net_init(&server_fd);
 
-        if (err != 0 || res == NULL)
+        ESP_LOGI(TAG, "Connecting to %s:%s...", WEB_SERVER, WEB_PORT);
+
+        if ((ret = mbedtls_net_connect(&server_fd, WEB_SERVER,
+                                       WEB_PORT, MBEDTLS_NET_PROTO_TCP)) != 0)
         {
-            ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            continue;
+            ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
+            goto exit;
         }
 
-        /* Code to print the resolved IP.
+        ESP_LOGI(TAG, "Connected.");
 
-           Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
-        addr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
-        ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
+        mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-        s = socket(res->ai_family, res->ai_socktype, 0);
-        if (s < 0)
+        ESP_LOGI(TAG, "Performing the SSL/TLS handshake...");
+
+        while ((ret = mbedtls_ssl_handshake(&ssl)) != 0)
         {
-            ESP_LOGE(TAG, "... Failed to allocate socket.");
-            freeaddrinfo(res);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            continue;
-        }
-        ESP_LOGI(TAG, "... allocated socket");
-
-        if (connect(s, res->ai_addr, res->ai_addrlen) != 0)
-        {
-            ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
-            close(s);
-            freeaddrinfo(res);
-            vTaskDelay(4000 / portTICK_PERIOD_MS);
-            continue;
+            if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+            {
+                ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
+                goto exit;
+            }
         }
 
-        ESP_LOGI(TAG, "... connected");
-        freeaddrinfo(res);
+        ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
 
-        if (write(s, buf, strlen(buf)) < 0)
+        if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0)
         {
-            ESP_LOGE(TAG, "... socket send failed");
-            close(s);
-            vTaskDelay(4000 / portTICK_PERIOD_MS);
-            continue;
+            /* In real life, we probably want to close connection if ret != 0 */
+            ESP_LOGW(TAG, "Failed to verify peer certificate!");
+            bzero(buf, sizeof(buf));
+            mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
+            ESP_LOGW(TAG, "verification info: %s", buf);
         }
-        ESP_LOGI(TAG, "... socket send success");
-
-        struct timeval receiving_timeout;
-        receiving_timeout.tv_sec = 5;
-        receiving_timeout.tv_usec = 0;
-        if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout,
-                       sizeof(receiving_timeout)) < 0)
+        else
         {
-            ESP_LOGE(TAG, "... failed to set socket receiving timeout");
-            close(s);
-            vTaskDelay(4000 / portTICK_PERIOD_MS);
-            continue;
+            ESP_LOGI(TAG, "Certificate verified.");
         }
-        ESP_LOGI(TAG, "... set socket receiving timeout success");
 
-        /* Read HTTP response */
+        ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
+
+        ESP_LOGI(TAG, "Writing HTTP request...");
+
+        size_t written_bytes = 0;
+        ESP_LOGW(TAG, "length is %d %s", strlen(req_buf), req_buf);
+
         do
         {
-            bzero(recv_buf, sizeof(recv_buf));
-            r = read(s, recv_buf, sizeof(recv_buf) - 1);
-            for (int i = 0; i < r; i++)
+            ret = mbedtls_ssl_write(&ssl,
+                                    (const unsigned char *)req_buf + written_bytes,
+                                    strlen(req_buf) - written_bytes);
+            if (ret >= 0)
             {
-                putchar(recv_buf[i]);
+                ESP_LOGI(TAG, "%d bytes written", ret);
+                written_bytes += ret;
             }
-        } while (r > 0);
+            else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ)
+            {
+                ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
+                goto exit;
+            }
+        } while (written_bytes < strlen(buf));
 
-        ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d.", r, errno);
-        close(s);
+        ESP_LOGI(TAG, "Reading HTTP response...");
+        buf[0] = '\0';
+        do
+        {
+            len = sizeof(buf) - 1;
+            bzero(buf, sizeof(buf));
+            ret = mbedtls_ssl_read(&ssl, (unsigned char *)buf, len);
+
+            if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
+                continue;
+
+            if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+            {
+                ret = 0;
+                break;
+            }
+
+            if (ret < 0)
+            {
+                ESP_LOGE(TAG, "mbedtls_ssl_read returned -0x%x", -ret);
+                break;
+            }
+
+            if (ret == 0)
+            {
+                ESP_LOGI(TAG, "connection closed");
+                break;
+            }
+
+            len = ret;
+            ESP_LOGD(TAG, "%d bytes read", len);
+            /* Print response directly to stdout as it is read */
+            for (int i = 0; i < len; i++)
+            {
+                putchar(buf[i]);
+            }
+        } while (1);
+
+        mbedtls_ssl_close_notify(&ssl);
+
+    exit:
+        mbedtls_ssl_session_reset(&ssl);
+        mbedtls_net_free(&server_fd);
+
+        if (ret != 0)
+        {
+            mbedtls_strerror(ret, buf, 100);
+            ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
+        }
+
+        putchar('\n'); // JSON output doesn't have a newline at end
+
+        static int request_count;
+        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
+        printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
+
+        // for (int countdown = 10; countdown >= 0; countdown--)
+        // {
+        //     ESP_LOGI(TAG, "%d...", countdown);
+        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // }
+        // ESP_LOGI(TAG, "Starting again!");
         break;
     }
 }
+
 void send_data(const char *data)
 {
     ESP_LOGI(TAG, "%s", data);
     https_post_task(data);
 }
-char out[12];
+
+char out[14];
 
 /**
  * @brief sends queue data to the server
@@ -176,10 +283,12 @@ char out[12];
  */
 void https_send_task()
 {
-    static char data_to_send[1024];
+    static char data_to_send[512];
     while (1)
     {
-        if (uxQueueMessagesWaiting(xQueue) > MAX_BUFFER_TO_STORE)
+        ESP_LOGI(TAG, "Checking queue");
+
+        if (uxQueueMessagesWaiting(xQueue) >= MAX_BUFFER_TO_STORE)
         {
             ESP_LOGI(TAG, "BUFFER EXCEEDED! SENDING RECORDS! buffer size: %d", uxQueueMessagesWaiting(xQueue));
             // xQueueReceive(xQueue, out, (TickType_t)0);
@@ -193,7 +302,8 @@ void https_send_task()
                 }
                 else
                 {
-                    for (int i = 0; i < MAX_RECORD_TO_SEND_AT_ONCE; i++)
+                    ESP_LOGI(TAG, "length of witing queue is : %d", to_send);
+                    for (int i = 0; i < to_send; i++)
                     {
                         xQueueReceive(xQueue, out, (TickType_t)0);
                         if (i == 0)
@@ -212,6 +322,8 @@ void https_send_task()
                 data_to_send[0] = '\0';
             }
         }
+        ESP_LOGW(TAG, "will wait for 10 second ");
+
         vTaskDelay(10000 / portTICK_PERIOD_MS); // wait for 10 seconds before checking queue
     }
 }

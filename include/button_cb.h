@@ -7,9 +7,4 @@
 
 QueueHandle_t xQueue;
 
-void button_one_cb(gpio_num_t pin);
-void button_one_cb_test(gpio_num_t pin);
-void button_two_cb_test(gpio_num_t pin);
-void button_three_cb_test(gpio_num_t pin);
-void button_four_cb_test(gpio_num_t pin);
-void button_five_cb_test(gpio_num_t pin);
+void push_button_callback(int button_number);

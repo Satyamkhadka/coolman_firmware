@@ -53,7 +53,6 @@
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_wifi/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_event/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_netif/include",
-                "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_eth/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/tcpip_adapter/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_phy/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_phy/esp32c3/include",
@@ -131,6 +130,7 @@
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                 "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
+                "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                 ""
             ],
             "browse": {
@@ -181,7 +181,6 @@
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_wifi/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_event/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_netif/include",
-                    "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_eth/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/tcpip_adapter/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_phy/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/esp_phy/esp32c3/include",
@@ -259,6 +258,7 @@
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                     "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
+                    "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                     ""
                 ]
             },

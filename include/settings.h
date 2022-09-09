@@ -9,9 +9,9 @@
 #define BUTTON_TWO GPIO_NUM_4
 #define BUTTON_THREE GPIO_NUM_5
 #define BUTTON_FOUR GPIO_NUM_6
-#define BUTTON_FOUR GPIO_NUM_7
-#define BUTTON_RESET GPIO_NUM_0
+#define BUTTON_FIVE GPIO_NUM_7
 #define BUTTON_BUZZER GPIO_NUM_18
+
 // typedef struct{
 //     device_identification
 // }
