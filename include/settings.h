@@ -11,7 +11,8 @@
 #define BUTTON_FOUR GPIO_NUM_6
 #define BUTTON_FIVE GPIO_NUM_7
 #define BUTTON_BUZZER GPIO_NUM_18
-
+#define BUTTON_LED GPIO_NUM_1
+#define BUTTON_RESET GPIO_NUM_0
 // typedef struct{
 //     device_identification
 // }

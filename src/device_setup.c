@@ -7,7 +7,55 @@
 
 #include <time.h>
 #include "esp_sntp.h"
+#include "driver/gpio.h"
+#include "indicator_pattern.h"
+
+#include <wifi_provisioning/manager.h>
+
 const static char *TAG = "button_setup";
+
+void reset_device()
+{
+    // gpio_num_t pins[2] = {BUTTON_BUZZER, BUTTON_LED};
+    // indicate(pins, 2, 100, 100, 2);
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    ESP_LOGI(TAG, "resetting");
+    wifi_prov_mgr_reset_provisioning();
+    esp_restart();
+}
 
 static void initialize_sntp(void)
 {
@@ -27,33 +75,37 @@ void obtain_time()
     while (timeinfo.tm_year < (2016 - 1900))
     {
         ESP_LOGI(TAG, "Waiting for system time to be set...");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        gpio_num_t pins[2] = {BUTTON_LED};
+        indicate(pins, 1, 1000, 1000, 1);
         time(&now);
         localtime_r(&now, &timeinfo);
     }
     ESP_LOGI(TAG, "Time is set...");
 }
 
+void output_pin_setup(gpio_num_t pin)
+{
+    gpio_reset_pin(pin);
+    gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+}
+
 void pin_setup()
 {
     ESP_LOGI(TAG, "Setting up pins");
-    gpio_reset_pin(BUTTON_BUZZER);
-    gpio_set_direction(BUTTON_BUZZER, GPIO_MODE_OUTPUT);
-
-    gpio_set_level(BUTTON_BUZZER, 1);
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-    gpio_set_level(BUTTON_BUZZER, 0);
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-    gpio_set_level(BUTTON_BUZZER, 1);
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-    gpio_set_level(BUTTON_BUZZER, 0);
+    output_pin_setup(BUTTON_BUZZER);
+    output_pin_setup(BUTTON_LED);
+    gpio_num_t pins[2] = {BUTTON_BUZZER, BUTTON_LED};
+    indicate(pins, 2, 200, 200, 2);
     ESP_LOGI(TAG, "End of Setting up pins");
+
+    button_handle_t reset_button;
+    reset_button = iot_button_create(BUTTON_FOUR, BUTTON_ACTIVE_LOW); // this is button is purposefully set to low due to working mechanishm for the below used callback registration
+    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_add_on_press_cb(reset_button, 10, (button_cb)reset_device, NULL));
+    // ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(reset_button, BUTTON_CB_TAP, (button_cb)reset_device, NULL));
 }
 
 esp_err_t button_setup()
 {
-
-    pin_setup();
     xQueue = xQueueCreate(512, 12 * sizeof(char));
     ESP_LOGI(TAG, "Setting up buttons");
     // initializing button and adding callback

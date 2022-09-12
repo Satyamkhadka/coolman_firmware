@@ -24,7 +24,8 @@
 
 #include <wifi_provisioning/scheme_softap.h>
 #include "esp_sntp.h"
-
+#include "indicator_pattern.h"
+#include "settings.h"
 static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
@@ -103,6 +104,8 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
+        gpio_num_t pins[2] = {BUTTON_LED};
+        indicate(pins, 2, 100, 100, 2);
         ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
         esp_wifi_connect();
     }
@@ -173,6 +176,8 @@ static void wifi_prov_print_qr(const char *name, const char *pop, const char *tr
 
 void provisioning(void)
 {
+    gpio_num_t pins[2] = {BUTTON_BUZZER, BUTTON_LED};
+    indicate(pins, 2, 100, 100, 2);
     sntp_servermode_dhcp(1);
     /* Initialize the event loop */
     wifi_event_group = xEventGroupCreate();
@@ -345,6 +350,6 @@ void provisioning(void)
     ESP_LOGI(TAG, "Waiting for time to ser");
 
     // vTaskDelay(5000 / portTICK_PERIOD_MS);
-    obtain_time();
+    // obtain_time();
     // vTaskDelay(5000 / portTICK_PERIOD_MS);
 }

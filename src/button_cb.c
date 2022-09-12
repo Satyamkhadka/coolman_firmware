@@ -11,6 +11,7 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 #include "settings.h"
+#include "indicator_pattern.h"
 const static char *TAG = "button_cb";
 
 time_t now;
@@ -21,9 +22,8 @@ void push_button_callback(int button_number)
     ESP_LOGI(TAG, "button pressed number:%d", button_number);
     time(&now);
     ESP_LOGI(TAG, "current timestamp is: %d", (int)now);
-    gpio_set_level(BUTTON_BUZZER, 1);
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-    gpio_set_level(BUTTON_BUZZER, 0);
+    gpio_num_t pins[2] = {BUTTON_BUZZER, BUTTON_LED};
+    indicate(pins, 2, 100, 100, 2);
     // if space not available then emptying 3 space
     if (uxQueueSpacesAvailable(xQueue) == 0)
     {

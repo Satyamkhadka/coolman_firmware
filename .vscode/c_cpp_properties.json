@@ -130,7 +130,6 @@
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                 "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
-                "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                 ""
             ],
             "browse": {
@@ -258,7 +257,6 @@
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                     "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
-                    "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                     ""
                 ]
             },

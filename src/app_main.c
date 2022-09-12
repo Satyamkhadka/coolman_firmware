@@ -10,8 +10,6 @@
 #include "device_setup.h"
 #include "https.h"
 
-#include "indicator.h"
-
 void app_main(void)
 {
     /* Initialize NVS partition */
@@ -29,15 +27,10 @@ void app_main(void)
     /* Initialize TCP/IP */
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
+    pin_setup();
     // provision the device here. provide with the wifi
     provisioning();
-
     button_setup();
-    // buzzer_setup();
-    // this is the button press action
-    // xTaskCreate(btn_press_task, "test_button_presses", 4096, NULL, 1, NULL);
-
     // this sends button presses stored in the queue to the server
     xTaskCreate(https_send_task, "https_send_task", 8192 * 4, NULL, 1, NULL);
 }

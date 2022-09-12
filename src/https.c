@@ -44,7 +44,7 @@
 #define WEB_SERVER "192.168.114.158"
 #define WEB_PORT "8000"
 #define WEB_URL "/api/data/"
-static const char *TAG = "example";
+static const char *TAG = "https";
 
 static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
                              "Host: " WEB_SERVER "\r\n"
@@ -54,11 +54,11 @@ static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
                              "\r\n"
                              "%s";
 
-void https_post_task(const char *pvParameters)
+esp_err_t https_post_task(char *pvParameters)
 {
-    char buf[256];
-    char req_buf[256];
-    snprintf(req_buf, 255, REQUEST, strlen(pvParameters), (char *)pvParameters);
+    char buf[512];
+    char req_buf[512];
+    snprintf(req_buf, 255, REQUEST, strlen(pvParameters), pvParameters);
     int ret, flags, len;
     ESP_LOGW(TAG, "%s", req_buf);
     mbedtls_entropy_context entropy;
@@ -205,6 +205,8 @@ void https_post_task(const char *pvParameters)
 
         ESP_LOGI(TAG, "Reading HTTP response...");
         buf[0] = '\0';
+        pvParameters[0] = '\0';
+        // reusing req buf varaible for storing response
         do
         {
             len = sizeof(buf) - 1;
@@ -234,11 +236,7 @@ void https_post_task(const char *pvParameters)
 
             len = ret;
             ESP_LOGD(TAG, "%d bytes read", len);
-            /* Print response directly to stdout as it is read */
-            for (int i = 0; i < len; i++)
-            {
-                putchar(buf[i]);
-            }
+            strcat(pvParameters, buf);
         } while (1);
 
         mbedtls_ssl_close_notify(&ssl);
@@ -251,28 +249,40 @@ void https_post_task(const char *pvParameters)
         {
             mbedtls_strerror(ret, buf, 100);
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
+            return ESP_FAIL;
         }
 
-        putchar('\n'); // JSON output doesn't have a newline at end
-
-        static int request_count;
-        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
         printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
 
-        // for (int countdown = 10; countdown >= 0; countdown--)
-        // {
-        //     ESP_LOGI(TAG, "%d...", countdown);
-        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // }
-        // ESP_LOGI(TAG, "Starting again!");
-        break;
+        return ESP_OK;
     }
 }
 
-void send_data(const char *data)
+esp_err_t send_data(const char *data)
 {
-    ESP_LOGI(TAG, "%s", data);
-    https_post_task(data);
+    while (1)
+    {
+        char req_res_data[512];
+        strcpy(req_res_data, data);
+        bool success = 0;
+        if (https_post_task(req_res_data) == ESP_OK)
+        {
+            sscanf(req_res_data, "{\"success\": \"%i\", \"status\": \"successfully saved!\"}", success);
+            if (success)
+            {
+                return ESP_OK;
+            }
+            else
+            {
+                return ESP_ERR_NOT_FOUND;
+            }
+        }
+        else
+        {
+            return ESP_FAIL;
+        }
+        ESP_LOGI(TAG, "%s", req_res_data);
+    }
 }
 
 char out[14];

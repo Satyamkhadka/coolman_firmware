@@ -36,8 +36,8 @@ void buzzer_setup()
     led_indicator_handle_t led_handle = led_indicator_create(6, &config); // attach to gpio 8
 
     led_indicator_start(led_handle, BLINK_TEST_BLINK_LOOP); // call to start, the function does not block
-
-    // led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
-
-    // led_indicator_delete(&led_handle);
 }
+
+// led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
+
+// led_indicator_delete(&led_handle);
