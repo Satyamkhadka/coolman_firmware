@@ -5,7 +5,7 @@
 void indicate(gpio_num_t pin[], int number_of_pins, int on_time, int off_time, int times)
 {
 
-    ESP_LOGI(__func__, "indicate %d %d %d", on_time, off_time, times);
+    // ESP_LOGI(__func__, "indicate %d %d %d", on_time, off_time, times);
     if (times < 1)
     {
 
@@ -17,12 +17,12 @@ void indicate(gpio_num_t pin[], int number_of_pins, int on_time, int off_time, i
         for (int i = 0; i < times; i++)
         {
 
-            ESP_LOGI(__func__, "total size  %d  %d %d", on_time, off_time, times);
+            // ESP_LOGI(__func__, "total size  %d  %d %d", on_time, off_time, times);
 
             for (int j = 0; j < number_of_pins; j++)
             {
                 gpio_set_level(pin[j], 1);
-                ESP_LOGI(__func__, "%d", pin[j]);
+                // ESP_LOGI(__func__, "%d", pin[j]);
             }
 
             vTaskDelay(on_time / portTICK_PERIOD_MS);
@@ -34,5 +34,5 @@ void indicate(gpio_num_t pin[], int number_of_pins, int on_time, int off_time, i
         }
         vTaskDelay(off_time / portTICK_PERIOD_MS);
     }
-    ESP_LOGI(__func__, "exiting");
+    // ESP_LOGI(__func__, "exiting");
 }

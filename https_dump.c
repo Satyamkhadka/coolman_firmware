@@ -1,59 +1,3 @@
-/* HTTPS GET Example using plain mbedTLS sockets
- *
- * Contacts the howsmyssl.com API via TLS v1.2 and reads a JSON
- * response.
- *
- * Adapted from the ssl_client1 example in mbedtls.
- *
- * SPDX-FileCopyrightText: The Mbed TLS Contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * SPDX-FileContributor: 2015-2021 Espressif Systems (Shanghai) CO LTD
- */
-#include <string.h>
-#include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include "esp_netif.h"
-
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
-
-#include "mbedtls/platform.h"
-#include "mbedtls/net_sockets.h"
-#include "mbedtls/esp_debug.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
-#include "esp_crt_bundle.h"
-
-#include "https.h"
-#include "button_cb.h"
-#include "provisioning.h"
-/* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "httpbin.org"
-#define WEB_PORT "443"
-#define WEB_URL "/post"
-static const char *TAG = "https";
-
-static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
-                             "Host: " WEB_SERVER "\r\n"
-                             "Cache-Control: no-cache\r\n"
-                             "Content-Type: application/x-www-form-urlencoded\r\n"
-                             "Content-Length: %d\r\n"
-                             "\r\n"
-                             "%s";
-
 void https_post_task(char *pvParameters)
 {
 
@@ -111,11 +55,12 @@ void https_post_task(char *pvParameters)
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-        goto exit;
+        goto exit_ssl;
     }
 
     /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print
        a warning if CA verification fails but it will continue to connect.
+
        You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.
     */
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
@@ -184,6 +129,8 @@ void https_post_task(char *pvParameters)
         ESP_LOGI(TAG, "Writing HTTP request...");
 
         size_t written_bytes = 0;
+        ESP_LOGW(TAG, "length is %d %s", strlen(req_buf), req_buf);
+
         do
         {
             ret = mbedtls_ssl_write(&ssl,
@@ -199,10 +146,13 @@ void https_post_task(char *pvParameters)
                 ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
                 goto exit;
             }
+            ESP_LOGI(TAG, "%d %d", strlen(req_buf), written_bytes);
         } while (written_bytes < strlen(req_buf));
 
         ESP_LOGI(TAG, "Reading HTTP response...");
-
+        buf[0] = '\0';
+        pvParameters[0] = '\0';
+        // reusing req buf varaible for storing response
         do
         {
             len = sizeof(buf) - 1;
@@ -232,140 +182,28 @@ void https_post_task(char *pvParameters)
 
             len = ret;
             ESP_LOGD(TAG, "%d bytes read", len);
-            /* Print response directly to stdout as it is read */
-            for (int i = 0; i < len; i++)
-            {
-                putchar(buf[i]);
-            }
+            strcat(pvParameters, buf);
         } while (1);
 
         mbedtls_ssl_close_notify(&ssl);
 
-    exit:
+    exit_ssl:
         mbedtls_ssl_session_reset(&ssl);
-        mbedtls_net_free(&server_fd);
 
+    exit:
+        ESP_LOGE(TAG, "ssl reset");
+
+        ESP_LOGE(TAG, "fd sreset");
+        mbedtls_net_free(&server_fd);
         if (ret != 0)
         {
             mbedtls_strerror(ret, buf, 100);
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
+            break;
         }
 
-        putchar('\n'); // JSON output doesn't have a newline at end
-
-        static int request_count;
-        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
-        ESP_LOGI(TAG, "%s", buf);
-
-        printf("Minimum free heap size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
-
+        printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
         break;
     }
-}
-
-void test_task(char *pvParameters)
-{
-    ESP_LOGI(TAG, "%s", pvParameters);
-    vTaskDelay(12000 / portTICK_PERIOD_MS); // wait for 10 sec before sending again
     vTaskDelete(NULL);
-}
-
-esp_err_t send_data(const char *data)
-{
-    TaskHandle_t xHandle = NULL;
-    while (1)
-    {
-        char req_res_data[512];
-        strcpy(req_res_data, data);
-        bool success = 0;
-        // if (https_post_task(req_res_data) == ESP_OK)
-        // {
-        //     sscanf(req_res_data, "{\"success\": \"%i\", \"status\": \"successfully saved!\"}", success);
-        //     if (success)
-        //     {
-        //         return ESP_OK;
-        //     }
-        //     else
-        //     {
-        //         continue;
-        //     }
-        // }
-        // else
-        // {
-        //     continue;
-        // }
-        if (is_wifi_connected)
-        {
-            ESP_LOGW(TAG, "%s", req_res_data);
-
-            https_post_task(req_res_data);
-            ESP_LOGW(TAG, "created task for sending");
-        }
-        else
-        {
-            ESP_LOGW(TAG, "wifi not connected-- waiting for 10 sec to resend");
-            vTaskDelay(10000 / portTICK_PERIOD_MS); // wait for 10 sec before sending again
-        }
-
-        ESP_LOGI(TAG, "%s", req_res_data);
-    }
-}
-
-char out[14];
-
-/**
- * @brief sends queue data to the server
- *
- */
-void https_send_task()
-{
-    static char data_to_send[512];
-    SemaphoreHandle_t xHttpsRequestSemaphore = xSemaphoreCreateBinary(); // semaphore for self syncronization
-    xSemaphoreGive(xHttpsRequestSemaphore);
-
-    while (1)
-    {
-        ESP_LOGI(TAG, "Checking queue");
-        // checking if https sending action is available
-        xSemaphoreTake(xHttpsRequestSemaphore, portMAX_DELAY);
-
-        if (uxQueueMessagesWaiting(xQueue) >= MAX_BUFFER_TO_STORE)
-        {
-            ESP_LOGI(TAG, "BUFFER EXCEEDED! SENDING RECORDS! buffer size: %d", uxQueueMessagesWaiting(xQueue));
-            // xQueueReceive(xQueue, out, (TickType_t)0);
-            data_to_send[0] = '\0';
-            while (1)
-            {
-                int to_send = uxQueueMessagesWaiting(xQueue) > MAX_RECORD_TO_SEND_AT_ONCE ? MAX_RECORD_TO_SEND_AT_ONCE : uxQueueMessagesWaiting(xQueue);
-                if (to_send == 0)
-                {
-                    break;
-                }
-                else
-                {
-                    ESP_LOGI(TAG, "length of witing queue is : %d", to_send);
-                    for (int i = 0; i < to_send; i++)
-                    {
-                        xQueueReceive(xQueue, out, (TickType_t)0);
-                        if (i == 0)
-                        {
-                            strcat(data_to_send, "id=D-A-00-11-22-33-44&");
-                        }
-                        else
-                        {
-                            strcat(data_to_send, "&");
-                        }
-                        strcat(data_to_send, out);
-                    }
-                }
-                ESP_LOGW(TAG, "Records compiled and ready to send");
-                send_data(data_to_send);
-                data_to_send[0] = '\0';
-            }
-        }
-        ESP_LOGW(TAG, "will wait for 10 second ");
-
-        vTaskDelay(10000 / portTICK_PERIOD_MS); // wait for 10 seconds before checking queue
-        xSemaphoreGive(xHttpsRequestSemaphore);
-    }
 }

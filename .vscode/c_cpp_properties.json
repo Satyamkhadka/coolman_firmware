@@ -265,7 +265,7 @@
                 "IDF_VER=\"4.4.1\"",
                 "ESP_PLATFORM",
                 "_POSIX_READER_WRITER_LOCKS",
-                "PLATFORMIO=60104",
+                "PLATFORMIO=60105",
                 "ARDUINO_ESP32C3_DEV",
                 ""
             ],
