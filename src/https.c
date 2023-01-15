@@ -53,87 +53,80 @@ static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
                              "Content-Length: %d\r\n"
                              "\r\n"
                              "%s";
+bool set_vars_flag = false;
+int ret, flags, len;
+mbedtls_entropy_context entropy;
+mbedtls_ctr_drbg_context ctr_drbg;
+mbedtls_ssl_context ssl;
+mbedtls_x509_crt cacert;
+mbedtls_ssl_config conf;
+mbedtls_net_context server_fd;
 
 void https_post_task(const char *pvParameters)
 {
     char buf[256];
     char req_buf[256];
     snprintf(req_buf, 255, REQUEST, strlen(pvParameters), (char *)pvParameters);
-    int ret, flags, len;
     ESP_LOGW(TAG, "%s", req_buf);
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_context ssl;
-    mbedtls_x509_crt cacert;
-    mbedtls_ssl_config conf;
-    mbedtls_net_context server_fd;
 
-    mbedtls_ssl_init(&ssl);
-    mbedtls_x509_crt_init(&cacert);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    ESP_LOGI(TAG, "Seeding the random number generator");
-
-    mbedtls_ssl_config_init(&conf);
-
-    mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                     NULL, 0)) != 0)
+    if (!set_vars_flag)
     {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-        abort();
-    }
 
-    ESP_LOGI(TAG, "Attaching the certificate bundle...");
+        mbedtls_ssl_init(&ssl);
+        mbedtls_x509_crt_init(&cacert);
+        mbedtls_ctr_drbg_init(&ctr_drbg);
+        ESP_LOGI(TAG, "Seeding the random number generator");
 
-    ret = esp_crt_bundle_attach(&conf);
+        mbedtls_ssl_config_init(&conf);
 
-    if (ret < 0)
-    {
-        ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
-        abort();
-    }
+        mbedtls_entropy_init(&entropy);
+        if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                         NULL, 0)) != 0)
+        {
+            ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+            abort();
+        }
 
-    ESP_LOGI(TAG, "Setting hostname for TLS session...");
+        ESP_LOGI(TAG, "Attaching the certificate bundle...");
 
-    /* Hostname set here should match CN in server certificate */
-    if ((ret = mbedtls_ssl_set_hostname(&ssl, WEB_SERVER)) != 0)
-    {
-        ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
-        abort();
-    }
+        ret = esp_crt_bundle_attach(&conf);
 
-    ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
+        if (ret < 0)
+        {
+            ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
+            abort();
+        }
 
-    if ((ret = mbedtls_ssl_config_defaults(&conf,
-                                           MBEDTLS_SSL_IS_CLIENT,
-                                           MBEDTLS_SSL_TRANSPORT_STREAM,
-                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
-    {
-        ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-        goto exit;
-    }
+        ESP_LOGI(TAG, "Setting hostname for TLS session...");
 
-    /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print
-       a warning if CA verification fails but it will continue to connect.
+        /* Hostname set here should match CN in server certificate */
+        if ((ret = mbedtls_ssl_set_hostname(&ssl, WEB_SERVER)) != 0)
+        {
+            ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+            abort();
+        }
 
-       You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.
-    */
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
-    mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-#ifdef CONFIG_MBEDTLS_DEBUG
-    mbedtls_esp_enable_debug_log(&conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
-#endif
+        ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
 
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-    mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
-    mbedtls_ssl_conf_max_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
-#endif
+        if ((ret = mbedtls_ssl_config_defaults(&conf,
+                                               MBEDTLS_SSL_IS_CLIENT,
+                                               MBEDTLS_SSL_TRANSPORT_STREAM,
+                                               MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+        {
+            ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
+            goto exit;
+        }
 
-    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
-    {
-        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
-        goto exit;
+        mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+        mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+        mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+
+        if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
+        {
+            ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+            goto exit;
+        }
+        set_vars_flag = true;
     }
 
     while (1)
