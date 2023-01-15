@@ -16,11 +16,11 @@ button_config_t button_one_config = {
     .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS,
     .gpio_button_config = {
         .gpio_num = BUTTON_ONE,
-        .active_level = 1}};
-button_config_t button_two_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_TWO, .active_level = 1}};
-button_config_t button_three_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_THREE, .active_level = 1}};
-button_config_t button_four_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FOUR, .active_level = 1}};
-button_config_t button_five_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FIVE, .active_level = 1}};
+        .active_level = 0}};
+button_config_t button_two_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_TWO, .active_level = 0}};
+button_config_t button_three_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_THREE, .active_level = 0}};
+button_config_t button_four_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FOUR, .active_level = 0}};
+button_config_t button_five_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FIVE, .active_level = 0}};
 
 static void
 initialize_sntp(void)

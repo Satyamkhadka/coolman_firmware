@@ -18,7 +18,7 @@ time_t prev;
 char out[14];
 void push_button_callback(void *arg, void *button_number)
 {
-    ESP_LOGI(TAG, "button pressed number:%d", button_number);
+    ESP_LOGI(TAG, "button pressed number:%d", (int)button_number);
     time(&now);
     ESP_LOGI(TAG, "current timestamp is: %d", (int)now);
     gpio_set_level(BUTTON_BUZZER, 1);
