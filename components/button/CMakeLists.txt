@@ -1,5 +1,12 @@
-set(COMPONENT_ADD_INCLUDEDIRS button/include)
-set(COMPONENT_SRCS  "button/button.c"
-					"button/button_obj.cpp")
+set(PRIVREQ esp_timer)
 
-register_component()
+if("${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}" VERSION_GREATER_EQUAL "5.0")
+    list(APPEND REQ esp_adc)
+else() 
+    list(APPEND REQ esp_adc_cal)
+endif()
+
+idf_component_register(SRCS "button/button_adc.c" "button/button_gpio.c" "button/iot_button.c"
+                        INCLUDE_DIRS include
+                        REQUIRES driver ${REQ}
+                        PRIV_REQUIRES ${PRIVREQ})

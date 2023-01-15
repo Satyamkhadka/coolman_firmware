@@ -5,9 +5,8 @@
 #include <nvs_flash.h>
 #include <esp_wifi.h>
 
-#include "test_input_generator.h"
 #include "provisioning.h"
-#include "device_setup.h"
+// #include "device_setup.h"
 #include "https.h"
 
 #include "indicator.h"
@@ -31,9 +30,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // provision the device here. provide with the wifi
-    provisioning();
+    // provisioning();
 
-    button_setup();
+    // button_setup();
     // buzzer_setup();
     // this is the button press action
     // xTaskCreate(btn_press_task, "test_button_presses", 4096, NULL, 1, NULL);

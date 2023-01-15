@@ -7,4 +7,4 @@
 
 QueueHandle_t xQueue;
 
-void push_button_callback(int button_number);
+void push_button_callback(void *a, void *button_number);

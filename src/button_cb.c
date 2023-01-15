@@ -16,7 +16,7 @@ const static char *TAG = "button_cb";
 time_t now;
 time_t prev;
 char out[14];
-void push_button_callback(int button_number)
+void push_button_callback(void *arg, void *button_number)
 {
     ESP_LOGI(TAG, "button pressed number:%d", button_number);
     time(&now);

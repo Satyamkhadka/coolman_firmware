@@ -11,7 +11,7 @@ void btn_press_task()
 
     while (1)
     {
-        push_button_callback(1);
+        push_button_callback(NULL, (void *)1);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }

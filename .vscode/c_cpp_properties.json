@@ -129,7 +129,7 @@
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/openssl/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                 "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
-                "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
+                "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/include",
                 "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                 ""
             ],
@@ -257,17 +257,17 @@
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/openssl/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/spiffs/include",
                     "/home/s4aty4m/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
-                    "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/button/include",
+                    "/home/s4aty4m/satyam/homegrown/happy_or_not/components/button/include",
                     "/home/s4aty4m/satyam/homegrown/happy_or_not/components/indicator/include",
                     ""
                 ]
             },
             "defines": [
                 "_GNU_SOURCE",
-                "IDF_VER=\"4.4.1\"",
+                "IDF_VER=\"4.4.2\"",
                 "ESP_PLATFORM",
                 "_POSIX_READER_WRITER_LOCKS",
-                "PLATFORMIO=60104",
+                "PLATFORMIO=60105",
                 "ARDUINO_ESP32C3_DEV",
                 ""
             ],

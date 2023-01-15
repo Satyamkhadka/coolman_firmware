@@ -9,7 +9,21 @@
 #include "esp_sntp.h"
 const static char *TAG = "button_setup";
 
-static void initialize_sntp(void)
+// button  config
+button_config_t button_one_config = {
+    .type = BUTTON_TYPE_GPIO,
+    .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS,
+    .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS,
+    .gpio_button_config = {
+        .gpio_num = BUTTON_ONE,
+        .active_level = 1}};
+button_config_t button_two_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_TWO, .active_level = 1}};
+button_config_t button_three_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_THREE, .active_level = 1}};
+button_config_t button_four_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FOUR, .active_level = 1}};
+button_config_t button_five_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FIVE, .active_level = 1}};
+
+static void
+initialize_sntp(void)
 {
     ESP_LOGI(TAG, "Initializing SNTP");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
@@ -36,7 +50,7 @@ void obtain_time()
 
 void pin_setup()
 {
-    ESP_LOGI(TAG, "Setting up pins");
+    ESP_LOGI(TAG, "Setting up buzzer pins");
     gpio_reset_pin(BUTTON_BUZZER);
     gpio_set_direction(BUTTON_BUZZER, GPIO_MODE_OUTPUT);
 
@@ -52,37 +66,36 @@ void pin_setup()
 
 esp_err_t button_setup()
 {
-
     pin_setup();
     xQueue = xQueueCreate(512, 12 * sizeof(char));
-    ESP_LOGI(TAG, "Setting up buttons");
+    ESP_LOGI(TAG, "Setting up buttons BUTTON_ONE");
     // initializing button and adding callback
     button_handle_t button_one;
-    button_one = iot_button_create(BUTTON_ONE, BUTTON_ACTIVE_HIGH);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(button_one, BUTTON_CB_TAP, (button_cb)push_button_callback, 1));
+    button_one = iot_button_create(&button_one_config);
+    iot_button_register_cb(button_one, BUTTON_SINGLE_CLICK, push_button_callback, (void *)1);
     // button two
     // initializing button and adding callback
     button_handle_t button_two;
-    button_two = iot_button_create(BUTTON_TWO, BUTTON_ACTIVE_HIGH);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(button_two, BUTTON_CB_TAP, (button_cb)push_button_callback, 2));
-    ESP_LOGI(TAG, "end of Setting up buttons");
+    button_two = iot_button_create(&button_two_config);
+    iot_button_register_cb(button_two, BUTTON_SINGLE_CLICK, push_button_callback, (void *)2);
+    ESP_LOGI(TAG, "end of Setting up buttons BUTTON_TWO");
 
     // initializing button and adding callback
     button_handle_t button_three;
-    button_three = iot_button_create(BUTTON_THREE, BUTTON_ACTIVE_HIGH);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(button_three, BUTTON_CB_TAP, (button_cb)push_button_callback, 3));
-    ESP_LOGI(TAG, "end of Setting up buttons");
+    button_three = iot_button_create(&button_three_config);
+    iot_button_register_cb(button_three, BUTTON_SINGLE_CLICK, push_button_callback, (void *)3);
+    ESP_LOGI(TAG, "end of Setting up buttons BUTTON_THREE");
 
     // initializing button and adding callback
     button_handle_t button_four;
-    button_four = iot_button_create(BUTTON_FOUR, BUTTON_ACTIVE_HIGH);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(button_four, BUTTON_CB_TAP, (button_cb)push_button_callback, 4));
-    ESP_LOGI(TAG, "end of Setting up buttons");
+    button_four = iot_button_create(&button_four_config);
+    iot_button_register_cb(button_four, BUTTON_SINGLE_CLICK, push_button_callback, (void *)4);
+    ESP_LOGI(TAG, "end of Setting up buttons BUTTON_FOUR");
 
     // initializing button and adding callback
     button_handle_t button_five;
-    button_five = iot_button_create(BUTTON_FIVE, BUTTON_ACTIVE_HIGH);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(iot_button_set_evt_cb(button_five, BUTTON_CB_TAP, (button_cb)push_button_callback, 5));
-    ESP_LOGI(TAG, "end of Setting up buttons");
+    button_five = iot_button_create(&button_five_config);
+    iot_button_register_cb(button_five, BUTTON_SINGLE_CLICK, push_button_callback, (void *)5);
+    ESP_LOGI(TAG, "end of Setting up buttons BUTTON_FIVE");
     return ESP_OK;
 }
