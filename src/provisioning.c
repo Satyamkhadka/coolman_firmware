@@ -24,7 +24,7 @@
 
 #include <wifi_provisioning/scheme_softap.h>
 #include "esp_sntp.h"
-
+#include "settings.h"
 static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
@@ -117,11 +117,11 @@ static void wifi_init_sta(void)
 
 static void get_device_service_name(char *service_name, size_t max)
 {
-    uint8_t eth_mac[6];
-    const char *ssid_prefix = "PROV_";
+    uint8_t eth_mac[12];
+    const char *ssid_prefix = DEVICE_PREFIX;
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
     snprintf(service_name, max, "%s%02X%02X%02X",
-             ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
+             ssid_prefix, eth_mac[0], eth_mac[1], eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);
 }
 
 /* Handler for the optional provisioning endpoint registered by the application.
@@ -174,6 +174,7 @@ static void wifi_prov_print_qr(const char *name, const char *pop, const char *tr
 void provisioning(void)
 {
     sntp_servermode_dhcp(1);
+
     /* Initialize the event loop */
     wifi_event_group = xEventGroupCreate();
 
@@ -227,7 +228,6 @@ void provisioning(void)
 #else
     /* Let's find out if the device is provisioned */
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
-
 #endif
     /* If device is not yet provisioned start provisioning service */
     if (!provisioned)
@@ -239,7 +239,6 @@ void provisioning(void)
          *     - Wi-Fi SSID when scheme is wifi_prov_scheme_softap
          *     - device name when scheme is wifi_prov_scheme_ble
          */
-        char service_name[12];
         get_device_service_name(service_name, sizeof(service_name));
 
         /* What is the security level that we want (0 or 1):
@@ -338,6 +337,7 @@ void provisioning(void)
 
         /* Start Wi-Fi station */
         wifi_init_sta();
+        get_device_service_name(service_name, sizeof(service_name));
     }
 
     /* Wait for Wi-Fi connection */

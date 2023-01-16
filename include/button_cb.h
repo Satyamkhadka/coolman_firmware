@@ -8,3 +8,4 @@
 QueueHandle_t xQueue;
 
 void push_button_callback(void *a, void *button_number);
+void reset_provision(void *a, void *button_number);

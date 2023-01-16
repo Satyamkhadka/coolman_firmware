@@ -8,7 +8,7 @@
 #include "provisioning.h"
 #include "device_setup.h"
 #include "https.h"
-
+#include "test_input_generator.h"
 #include "indicator.h"
 
 void app_main(void)

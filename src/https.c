@@ -39,17 +39,16 @@
 
 #include "https.h"
 #include "button_cb.h"
+#include "settings.h"
 
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "192.168.114.158"
-#define WEB_PORT "8000"
-#define WEB_URL "/api/data/"
+
 static const char *TAG = "example";
 
 static const char *REQUEST = "POST " WEB_URL " HTTP/1.0\r\n"
                              "Host: " WEB_SERVER "\r\n"
                              "Cache-Control: no-cache\r\n"
-                             "Content-Type: application/x-www-form-urlencoded\r\n"
+                             "Content-Type: application/json\r\n"
                              "Content-Length: %d\r\n"
                              "\r\n"
                              "%s";
@@ -301,15 +300,19 @@ void https_send_task()
                         xQueueReceive(xQueue, out, (TickType_t)0);
                         if (i == 0)
                         {
-                            strcat(data_to_send, "id=D-A-00-11-22-33-44&");
+                            strcat(data_to_send, "{\"t\":1,\"id\":\"");
+                            strcat(data_to_send, service_name);
+                            strcat(data_to_send, "\",");
                         }
                         else
                         {
-                            strcat(data_to_send, "&");
+                            strcat(data_to_send, ",");
                         }
                         strcat(data_to_send, out);
                     }
                 }
+                strcat(data_to_send, "}");
+
                 ESP_LOGW(TAG, "Records compiled and ready to send");
                 send_data(data_to_send);
                 data_to_send[0] = '\0';

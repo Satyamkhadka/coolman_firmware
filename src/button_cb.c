@@ -11,6 +11,8 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 #include "settings.h"
+#include <wifi_provisioning/manager.h>
+
 const static char *TAG = "button_cb";
 
 time_t now;
@@ -33,8 +35,13 @@ void push_button_callback(void *arg, void *button_number)
     }
     // preparing the output
     out[0] = '\0';
-    sprintf(out, "%d=%d", (int)now, (int)button_number);
+    sprintf(out, "\"%d\":\"%d\"", (int)now, (int)button_number);
     // sending in queue
 
     xQueueSend(xQueue, out, (TickType_t)0);
+}
+void reset_provision(void *arg, void *button_number)
+{
+    wifi_prov_mgr_reset_provisioning();
+    esp_restart();
 }

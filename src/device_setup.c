@@ -10,17 +10,12 @@
 const static char *TAG = "button_setup";
 
 // button  config
-button_config_t button_one_config = {
-    .type = BUTTON_TYPE_GPIO,
-    .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS,
-    .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS,
-    .gpio_button_config = {
-        .gpio_num = BUTTON_ONE,
-        .active_level = 0}};
+button_config_t button_one_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_ONE, .active_level = 0}};
 button_config_t button_two_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_TWO, .active_level = 0}};
 button_config_t button_three_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_THREE, .active_level = 0}};
 button_config_t button_four_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FOUR, .active_level = 0}};
 button_config_t button_five_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_FIVE, .active_level = 0}};
+button_config_t button_reset_config = {.type = BUTTON_TYPE_GPIO, .long_press_time = CONFIG_BUTTON_LONG_PRESS_TIME_MS, .short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS, .gpio_button_config = {.gpio_num = BUTTON_RESET, .active_level = 0}};
 
 static void
 initialize_sntp(void)
@@ -97,5 +92,12 @@ esp_err_t button_setup()
     button_five = iot_button_create(&button_five_config);
     iot_button_register_cb(button_five, BUTTON_SINGLE_CLICK, push_button_callback, (void *)5);
     ESP_LOGI(TAG, "end of Setting up buttons BUTTON_FIVE");
+
+    // initializing button and adding callback
+    button_handle_t button_reset;
+    button_reset = iot_button_create(&button_reset_config);
+    iot_button_register_cb(button_reset, BUTTON_SINGLE_CLICK, reset_provision, NULL);
+    ESP_LOGI(TAG, "end of Setting up buttons BUTTON RESET");
+
     return ESP_OK;
 }
