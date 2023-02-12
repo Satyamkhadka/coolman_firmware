@@ -2,6 +2,7 @@
 
 // software settings
 #define TEST_MODE true
+
 #define NO_OF_BUTTONS 5
 #define DEVICE_PREFIX "D-A-"
 

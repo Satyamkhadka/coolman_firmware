@@ -1,6 +1,6 @@
 #include "indicator.h"
 
-void buzzer_setup()
+void indicator_setup()
 {
     const blink_step_t test_blink_one_time[] = {
         {LED_BLINK_HOLD, LED_STATE_ON, 50},   // step1: turn on LED 50 ms
@@ -33,11 +33,11 @@ void buzzer_setup()
         .off_level = 0, // attach led positive side to esp32 gpio pin
         .mode = LED_GPIO_MODE,
     };
-    led_indicator_handle_t led_handle = led_indicator_create(6, &config); // attach to gpio 8
+    led_indicator_handle_t led_handle = led_indicator_create(4, &config); // attach to gpio 8
 
     led_indicator_start(led_handle, BLINK_TEST_BLINK_LOOP); // call to start, the function does not block
 
-    // led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
+    led_indicator_stop(led_handle, BLINK_TEST_BLINK_LOOP); // call stop
 
     // led_indicator_delete(&led_handle);
 }

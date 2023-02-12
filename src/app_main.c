@@ -30,11 +30,11 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // provision the device here. provide with the wifi
+    indicator_setup();
     provisioning();
 
     button_setup();
-    buzzer_setup();
-    // this is the button press action
+    // uncomment below task for generating test button preses continously
     // xTaskCreate(btn_press_task, "test_button_presses", 4096, NULL, 1, NULL);
 
     // this sends button presses stored in the queue to the server
